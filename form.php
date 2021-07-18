@@ -29,6 +29,8 @@ class form extends AbstractClickMacro
     {
 		return <<<EOT
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+
 const anchors = document.querySelectorAll('a')
 
 for (let anchor of anchors) {
@@ -41,29 +43,24 @@ for (let anchor of anchors) {
     })
   })
 }
+});
 </script>
 
-<center>
-<iframe id="ywbplform" srcdoc="
-
-<!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset='UTF-8'>
-    <style>
-body {
-    margin:0px;
+<style>
+.ywbcontainer {
+    margin:auto;
     padding:0px;
     border:1px solid #$color;
-    -webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; }
-.wrap {margin:auto;width:100%;height:100%;}
-p{
+    -webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; 
+	width: 320px;
+	height: 240px;}
+.ywbwrap {margin:auto;width:100%;height:100%;}
+.ywbp{
     margin:0px 0px 5px 0px;
     padding-left:5px;
     font-size:15px;
     font-family: 'PT Sans', sans-serif;}
-h1{
+.ywbh1{
     text-align:center;
     color:#fff;
     background:#$color;
@@ -75,12 +72,12 @@ h1{
     font-size: 18px;
     font-weight:bold;
     font-family: 'PT Sans', sans-serif;}
-.order_form {
+.ywborderform {
     padding-left: 16px;
     padding-right: 16px;
     margin: 0px;
     font-family: 'PT Sans', sans-serif;}
-.order_form input{
+.ywborderform input{
     width:90%;
     padding:5px;
     margin: 0px 10px 10px 10px;
@@ -91,8 +88,8 @@ h1{
     display: block; 
     box-sizing: border-box;
     height: 30px;}
-.order_form .clear{clear: both;}
-.ifr_button{
+.ywborderform .clear{clear: both;}
+.ywbbutton{
     display: block;margin: 20px auto; 
     border:none; outline:none;color: #fff;font-size:24px;
     font-family: 'PT Sans', sans-serif;
@@ -100,25 +97,23 @@ h1{
     line-height: 48px;background: #$color;font-weight:600;
     text-transform: uppercase;
     -webkit-border-radius: 30px;-moz-border-radius: 3px;border-radius: 30px;cursor: pointer;}	
-    </style>
-	</head>
-<body>
-    <div class='wrap'>
-        <h1>$header</h1>
-        <form action='$orderphp' method='post' class='order_form'>
-            <p>$nametxt:</p>
-            <input class='form_input' value='' name='name' type='text' required='1'>
-            <p>$phonetxt:</p>
-            <input class='form_input' value='' name='phone' type='text' required='1'>
+</style>
+<div class='ywbcontainer'>
+<div class='ywbwrap' id='ywbplform'>
+        <h1 class='ywbh1'>$header</h1>
+        <form action='$orderphp' method='post' class='ywborderform'>
+            <p class='ywbp'>$nametxt:</p>
+            <input value='' name='name' type='text' required='1'>
+            <p class='ywbp'>$phonetxt:</p>
+            <input value='' name='phone' type='tel' required='1'>
             <div class='clear'></div>
 			<input type='hidden' name='$subidname' value='{$click->getSubId()}'/>
             <input type='hidden' name='$pxsubname' value='{$click->getSubIdN($pxsubid)}'/>
 			<input type='hidden' name='country' value='{$click->getCountry()}'/>
-            <button class='ifr_button' type='submit'>$ordertxt</button>
+            <button class='ywbbutton' type='submit'>$ordertxt</button>
         </form>
-    </div>
-</body>
-</html>" height="320" scrolling="no" frameborder="0"></iframe>
+</div>
+</div>
 </center>
 EOT;
     }
