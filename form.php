@@ -8,14 +8,16 @@ use Traffic\Macros\AbstractClickMacro;
 /*
   Macro for Keitaro Tracker(https://yellowweb.top/keitaro) 
   This macro adds an order form to your prelandings, for example:
-  {_form:order.php,sub1,aabbaa,Our Great Product,Name,Phone,Order Now!}
+  {_form:order.php,sub1,px,4,aabbaa,Our Great Product,Name,Phone,Order Now!}
   
-  First parameter should be the name of your php script that sends leads to your affiliate program.
-  Second parameter is the name of the sub-mark that will have Keitaro's unique click id as the value.
-  Third parameter is the color of the form in hex-code
-  Fourth parameter is the header of the form
-  Fifth and sixth parameters are the labels for name and phone fields
-  Seventh parameter is the label for submit button.
+  Parameter #1 should be the name of your php script that sends leads to your affiliate program.
+  Parameter #2 is the name of the form's input field that will have Keitaro's unique click id as its value.
+  Parameter #3 is the name of the form's input that will have the Facebook's pixel id as its value. 
+  Parameter #4 is the index of Keitaro's sub-mark that has the Facebook's pixel id as its value. It will be added as the value for the input field from parameter #3.
+  Parameter #5 is the color of the form in hex-code
+  Parameter #6 is the header of the form
+  Parameters #7&8 are the labels for name and phone fields of the form
+  Parameter #9 is the label for submit button.
   
   !!Also this script replaces all the links in your prelanding so that they scroll the page to this form.
   This script also adds country code into the form's hidden input named 'country'.
@@ -23,7 +25,7 @@ use Traffic\Macros\AbstractClickMacro;
  */
 class form extends AbstractClickMacro
 {
-    public function process(BaseStream $stream, RawClick $click, $orderphp,$subidsub,$color,$header,$nametxt,$phonetxt,$ordertxt)
+    public function process(BaseStream $stream, RawClick $click, $orderphp,$subidname,$pxsubname,$pxsubid,$color,$header,$nametxt,$phonetxt,$ordertxt)
     {
 		return <<<EOT
 <script>
@@ -109,7 +111,8 @@ h1{
             <p>$phonetxt:</p>
             <input class='form_input' value='' name='phone' type='text' required='1'>
             <div class='clear'></div>
-            <input type='hidden' name='$subidsub' value='{$click->getSubId()}'/>
+			<input type='hidden' name='$subidname' value='{$click->getSubId()}'/>
+            <input type='hidden' name='$pxsubname' value='{$click->getSubIdN($pxsubid)}'/>
 			<input type='hidden' name='country' value='{$click->getCountry()}'/>
             <button class='ifr_button' type='submit'>$ordertxt</button>
         </form>
