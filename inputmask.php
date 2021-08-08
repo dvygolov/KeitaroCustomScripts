@@ -26,7 +26,8 @@ function addinputmask(){
 	var im = new Inputmask({
 	  mask: '{$mask}',
 	  showMaskOnHover: true,
-	  showMaskOnFocus: true	
+	  showMaskOnFocus: true,	
+	  clearIncomplete: true
 	});
 	
 	for (var i=0; i<tels.length; i++){
