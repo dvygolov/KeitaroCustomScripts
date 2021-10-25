@@ -17,6 +17,8 @@ class replaceback extends AbstractClickMacro
 {
     public function process(BaseStream $stream, RawClick $click, $url)
     {
+	if (strpos($url,'*offer*')!==-1)
+			$url=str_replace('*offer*',"/?_lp=1&_token=".$click->get('token'),$url);
 		return "
 		<script>
 		(function(window, location) {
