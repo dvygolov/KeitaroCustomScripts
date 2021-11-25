@@ -62,6 +62,8 @@ class ywbegfilter extends AbstractFilter
 
 		$apiAddress=$apiAddress.'/admin_api/v1';
 		$streamId=$filter->getStreamId();
+		//получаем страну, чтобы потом построить отчёт только по нужной стране
+		$country=$rawClick->getCountry();
 		
 		//запрашиваем все данные по потоку, чтобы вынуть из него идентификаторы лендингов
 		$fullAddress=$apiAddress.'/streams/'.$streamId;
@@ -93,7 +95,8 @@ class ywbegfilter extends AbstractFilter
 				'columns' => [],
 				'metrics' => [$metric],
 				'filters' => [
-					['name' => 'landing_id', 'operator' => 'IN_LIST', 'expression' => $landingIds]
+					['name' => 'landing_id', 'operator' => 'IN_LIST', 'expression' => $landingIds],
+					['name' => 'country_code', 'operator'=> 'EQUALS', 'expression'=> $country]
 				],
 				'grouping' => ['landing'],
 				'range' => [
@@ -134,7 +137,7 @@ class ywbegfilter extends AbstractFilter
 		$landObjects=[];
 		foreach($landingIds as $l)
 		{
-			$share=($l==$selectedLandId)?100:0;
+			$share=($l==$selectedLandId?100:0);
 			
 			$landObj = (object) [
 				'landing_id' => $l,
