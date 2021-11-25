@@ -199,10 +199,16 @@ class ywbegfullfilter extends AbstractFilter
 	};
 
 
+	if (count($landingIds)>0)
+	{
 		$selectedLandId=$epsilon_greedy($landingIds,$lExplorationPercent,$lDays,$lMetric,'landing_id','landing',$tz,$apiKey,$apiAddress);
-		$selectedOfferId=$epsilon_greedy($offerIds,$oExplorationPercent,$oDays,$oMetric,'offer_id','offer',$tz,$apiKey,$apiAddress);
 		$set_selected($landingIds,$selectedLandId,'landing_id','landings',$streamId,$apiKey,$apiAddress);
+	}
+
+	if (count($offerIds)>0){
+		$selectedOfferId=$epsilon_greedy($offerIds,$oExplorationPercent,$oDays,$oMetric,'offer_id','offer',$tz,$apiKey,$apiAddress);
 		$set_selected($offerIds,$selectedOfferId,'offer_id','offers',$streamId,$apiKey,$apiAddress);
+	}
 	
 		return ($filter->getMode() == StreamFilter::ACCEPT);
 	}
