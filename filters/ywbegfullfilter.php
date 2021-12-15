@@ -83,7 +83,7 @@ class ywbegfullfilter extends AbstractFilter
 			$oMetric=$settings['ometric'];
 		if (isset($settings['odays']))
 			$oDays=$settings['odays'];
-		//file_put_contents("/var/www/keitaro/application/filters/eg.txt",$explorationPercent.' '.$metric.' '.$days); //отладка
+		//file_put_contents("/var/www/keitaro/application/filters/fulleg.txt",$explorationPercent.' '.$metric.' '.$days); //отладка
 
 		$apiAddress=$apiAddress.'/admin_api/v1';
 		$streamId=$filter->getStreamId();
@@ -128,7 +128,7 @@ class ywbegfullfilter extends AbstractFilter
 				'columns' => [],
 				'metrics' => [$metric],
 				'filters' => [
-					['name' => $idName, 'operator' => 'IN_LIST', 'expression' => $landingIds]
+					['name' => $idName, 'operator' => 'IN_LIST', 'expression' => $itemIds]
 				],
 				'grouping' => [$groupName],
 				'range' => [
@@ -146,7 +146,7 @@ class ywbegfullfilter extends AbstractFilter
 			$res=curl_exec($ch);
 			$report=json_decode($res,true);
 			curl_close($ch);
-			//file_put_contents("/var/www/keitaro/application/filters/eg.txt",$res); //отладка
+			//file_put_contents("/var/www/keitaro/application/filters/fulleg.txt",$res); //отладка
 			
 			//выбираем лучший вариант по показателям
 			$bestMetric=0;
