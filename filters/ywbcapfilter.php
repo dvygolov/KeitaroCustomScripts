@@ -28,7 +28,7 @@ class ywbcapfilter extends AbstractFilter
 
     public function getTemplate()
     {
-        return '<input class="form-control" ng-model="filter.payload" />';
+        return 'Кол-во лидов: <input class="form-control" ng-model="filter.payload.cap" />';
     }
 
     public function isPass(StreamFilter $filter, RawClick $rawClick)
@@ -108,8 +108,8 @@ class ywbcapfilter extends AbstractFilter
 			$totalLeads+= $row['conversions'];
 		}
 		
-    //взяли кап из настроек фильтра
-		$cap = $filter->getPayload();
+        //взяли кап из настроек фильтра
+		$cap = $filter->getPayload()["cap"];
 		
     return ($filter->getMode() == StreamFilter::ACCEPT && $totalLeads<$cap)
             || ($filter->getMode() == StreamFilter::REJECT && $totalLeads>=$cap);
