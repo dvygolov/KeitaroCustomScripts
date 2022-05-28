@@ -112,7 +112,7 @@ class ywbcapfilter extends AbstractFilter
         //взяли кап из настроек фильтра
 		$cap = $filter->getPayload()["cap"];
 		
-    return ($filter->getMode() == StreamFilter::ACCEPT && $totalLeads<$cap)
+        return ($filter->getMode() == StreamFilter::ACCEPT && $totalLeads<$cap)
             || ($filter->getMode() == StreamFilter::REJECT && $totalLeads>=$cap);
     }
 }
