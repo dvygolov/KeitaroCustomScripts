@@ -53,7 +53,7 @@ class ywbegfilter extends AbstractFilter
     {
 		$apiKey="<YOUR_API_KEY>";
 		$apiAddress="http://<YOUR_TRACKER_DOMAIN>";
-		$tz='Europe/Samara'; //здесь меняем пояс, если ваш часовой пояс не Москва!!!
+		$tz='Europe/Moscow'; //здесь меняем пояс, если ваш часовой пояс не Москва!!!
 		
 		//дальше ничего не трогаем, если не умеем!
 		$metric = 'lp_ctr';
@@ -64,7 +64,7 @@ class ywbegfilter extends AbstractFilter
 
         $logDir = '/var/www/keitaro/application/filters/ywbegfilter';
         $campaignId = $rawClick->getCampaignId();
-        $adminCampaignId=1;
+        $adminCampaignId=-1;
 
         $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
         $redis = $ktRedis->getOriginalClient();
