@@ -8,12 +8,14 @@ use Traffic\RawClick;
 
 /*
 Кастомный фильтр для Кейтаро для реализации работы Эпсилон-жадного алгоритма многоруких бандитов.
-Скопировать файл фильтра в папку application\filters затем перелогиниться в трекер
+Скопировать файл фильтра в папку application\filters затем перелогиниться в трекер.
 Устанавливаете фильтр в потоке, в поле пишите метрику, по которой будет выбираться лучшая прокла:
-lp_ctr, epc_confirmed, cr, crs
-При больших объёмах трафика крайне рекомендуется создать в папке application\filters папку egFilterCache 
-и дать туда права на запись для Кейтаро, чтобы фильтр каждый раз не лез в БД
-©2021 by Yellow Web
+lp_ctr, epc_confirmed, cr, crs.
+Также выбираете за сколько дней брать статистику, брать ли ей общую, только по вашей кампании или общую,
+но с учётом крео (для работы настройки по крео имя креатива должно храниться в трекере в поле creative_id).
+Последним выбираете процент рандома, для начала сойдёт 10%, далее можете экспериментировать.
+В качестве кеша для хранения полученных из БД Кейтаро используется Redis. Время хранения записей кеша = 5 минут.
+©2022 by Yellow Web
  */
 class ywbegfilter extends AbstractFilter
 {
@@ -36,6 +38,13 @@ class ywbegfilter extends AbstractFilter
 		</select>
 		<br/>
         За сколько дней брать стату для подсчёта лучшей метрики: <input type="number" class="form-control" ng-model="filter.payload.days" placeholder="Кол-во дней"/>
+        <br/>
+        Использовать стату: 
+		<select class="form-control" ng-model="filter.payload.statistics">
+			<option value="all">Общую</option>
+			<option value="campaign">Этой кампании</option>
+			<option value="creative">По крео</option>
+        </select>
 		<br/>
         Процент рандома: <input type="number" class="form-control" ng-model="filter.payload.percent" placeholder="Процент рандома"/>';
     }
@@ -45,15 +54,20 @@ class ywbegfilter extends AbstractFilter
 		$apiKey="<YOUR_API_KEY>";
 		$apiAddress="http://<YOUR_TRACKER_DOMAIN>";
 		$tz='Europe/Samara'; //здесь меняем пояс, если ваш часовой пояс не Москва!!!
-		$explorationPercent=10; //сколько процентов трафа отправлять на рандомную проклу
 		
 		//дальше ничего не трогаем, если не умеем!
-		$metric='lp_ctr';
-		$days=1;
-		$explorationPercent=10; 
+		$metric = 'lp_ctr';
+		$days = 1;
+		$explorationPercent = 10; 
+        $statistics = 'all'; 
 		date_default_timezone_set($tz);
 
-        $cacheDir="/var/www/keitaro/application/filters/egFilterCache";
+        $logDir = '/var/www/keitaro/application/filters/ywbegfilter';
+        $campaignId = $rawClick->getCampaignId();
+        $adminCampaignId=1;
+
+        $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
+        $redis = $ktRedis->getOriginalClient();
         $cachetime = 300; // 5 минут
 		//взяли настройки из настроек фильтра
 		$settings= $filter->getPayload();
@@ -62,32 +76,32 @@ class ywbegfilter extends AbstractFilter
 		if (isset($settings['metric']))
 			$metric=$settings['metric'];
 		if (isset($settings['days']))
-			$days=$settings['days'];
-		//file_put_contents("/var/www/keitaro/application/filters/eg.txt",$explorationPercent.' '.$metric.' '.$days); //отладка
+			$days = $settings['days'];
+		if (isset($settings['statistics']))
+			$statistics = $settings['statistics'];
 
 		$ch = curl_init();
-		$apiAddress=$apiAddress.'/admin_api/v1';
-		$streamId=$filter->getStreamId();
-		//получаем страну, чтобы потом построить отчёт только по нужной стране
-		$country=$rawClick->getCountry();
+		$apiAddress = $apiAddress.'/admin_api/v1';
+		$streamId = $filter->getStreamId();
 		
-        $cachefile = $cacheDir.'/stream-'.$streamId.'.json';
-		if (file_exists($cachefile) && time() - $cachetime < filemtime($cachefile)) {
-            $json = file_get_contents($cachefile);
-            $streamParams = json_decode($json, true);
-        } else {
-		//запрашиваем все данные по потоку, чтобы вынуть из него идентификаторы лендингов
-		$fullAddress=$apiAddress.'/streams/'.$streamId;
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
-		curl_setopt($ch, CURLOPT_URL, $fullAddress);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Api-Key: '.$apiKey));
-		$res=curl_exec($ch);
-            $streamParams=json_decode($res,true);
-            //кешируем на диск
-            $json = json_encode($streamParams,JSON_PRETTY_PRINT);
-            file_put_contents($cachefile, $json);
+        $cachekey = 'ywbEgStream-'.$streamId;
+        $res = $redis->get($cachekey);
+		if ($res===false) {
+            //запрашиваем все данные по потоку, чтобы вынуть из него идентификаторы лендингов
+            $fullAddress=$apiAddress.'/streams/'.$streamId;
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+            curl_setopt($ch, CURLOPT_URL, $fullAddress);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Api-Key: '.$apiKey));
+            $res=curl_exec($ch);
+            $redis->set($cachekey, $res, ['nx', 'ex'=>$cachetime]);
+            if ($campaignId===$adminCampaignId)
+                file_put_contents($logDir."/".$cachekey."-db.txt", $res); //отладка
         }
+        else{
+            if ($campaignId===$adminCampaignId)
+                file_put_contents($logDir."/".$cachekey."-redis.txt", $res); //отладка
+        }
+        $streamParams=json_decode($res,true);
 
 		//вынимаем идентификаторы лендов
 		$landingIds=[];
@@ -98,8 +112,7 @@ class ywbegfilter extends AbstractFilter
             }
         }
         catch(Exception $e){
-            $campaignId = $rawClick->getCampaignId();
-            file_put_contents($cacheDir."/eg_errors.txt", 
+            file_put_contents($logDir."/eg_errors.txt", 
                 "Campaign Id:".$campaignId." Settings".$explorationPercent.' '.$metric.' '.$days , FILE_APPEND); //отладка
         }
         sort($landingIds);
@@ -112,13 +125,11 @@ class ywbegfilter extends AbstractFilter
 			$selectedLandId=$landingIds[$random];
 		}
         else{ 
-            
-            $cachefile = $cacheDir.'/landings-'.implode(",",$landingIds).'.json';
-        
-            if (file_exists($cachefile) && time() - $cachetime < filemtime($cachefile)) {
-                $json = file_get_contents($cachefile);
-                $report = json_decode($json, true);
-            } else {
+            $cachekey = 'ywbEgFilterlandings-'.$statistics.'-'.implode(",",$landingIds);
+            $res = $redis->get($cachekey);
+            if ($res===false) {
+                //получаем страну, чтобы потом построить отчёт только по нужной стране
+                $country=$rawClick->getCountry();
                 //в остальных случаях выбираем лучшую по выбранному показателю
                 //запрашиваем отчёт по нашим проклам за нужное кол-во дней
                 $days-=1;
@@ -128,7 +139,6 @@ class ywbegfilter extends AbstractFilter
                     'metrics' => [$metric],
                     'filters' => [
                         ['name' => 'landing_id', 'operator' => 'IN_LIST', 'expression' => $landingIds],
-                        ['name' => 'country_code', 'operator'=> 'EQUALS', 'expression'=> $country]
                     ],
                     'grouping' => ['landing'],
                     'range' => [
@@ -137,18 +147,39 @@ class ywbegfilter extends AbstractFilter
                         'to' => date('Y-m-d')
                     ]
                 ];
+
+                if ($campaignId!==$adminCampaignId)
+                    array_unshift($params['filters'], 
+                        ['name' => 'country_code', 'operator'=> 'EQUALS', 'expression'=> $country]);
+
+                if ($statistics==='campaign'){
+                    array_unshift($params['filters'], 
+                        ['name' => 'campaign_id', 'operator' => 'EQUALS', 'expression' => $campaignId]);
+                }
+                else if ($statistics==='creative'){
+                    $creativeName = $rawClick->getCreativeId();
+                    if (isset($creativeName) && $creativeName!=="")
+                        array_unshift($params['filters'], 
+                            ['name' => 'creative_id', 'operator' => 'EQUALS', 'expression' => $creativeName]);
+                }
+
+                if ($campaignId===$adminCampaignId)
+                    file_put_contents($logDir."/".$cachekey."-query.txt", json_encode($params)); //отладка
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
                 curl_setopt($ch, CURLOPT_URL, $apiAddress.'/report/build');
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Api-Key: '.$apiKey));
                 curl_setopt($ch, CURLOPT_POST, 1);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));		
                 $res=curl_exec($ch);
-                $report=json_decode($res,true);
-                //кешируем на диск
-                $json = json_encode($report,JSON_PRETTY_PRINT);
-                file_put_contents($cachefile, $json);
+                $redis->set($cachekey, $res, ['nx', 'ex'=>$cachetime]);
+                if ($campaignId===$adminCampaignId)
+                    file_put_contents($logDir."/".$cachekey."-db.txt", $res); //отладка
             }
-			//file_put_contents("/var/www/keitaro/application/filters/eg.txt",$res); //отладка
+            else{
+                if ($campaignId===$adminCampaignId)
+                    file_put_contents($logDir."/".$cachekey."-redis.txt", $res); //отладка
+            }
+            $report=json_decode($res,true);
 			
 			//выбираем лучшую проклу по показателям
 			$bestMetric=0;
