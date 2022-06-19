@@ -23,26 +23,27 @@ class ywbcurl extends AbstractAction
     {
         $url = $this->getActionPayload();
         $cachetime = 60*60*24; //кешируем на сутки
-
-        $urlPart = end(explode('/',rtrim($url,'/'))); //избавляемся от https://
-        $cachekey = 'ywbDomain-'.$urlPart;
+        $httpcode = 200;
 
         $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
         $redis = $ktRedis->getOriginalClient();
 
-        $html='Curl Cached by Yellow Web';
+        $cachekey = 'ywbDomain-'.$url;
         $res = $redis->get($cachekey);
         if ($res===false){
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
             curl_setopt($ch, CURLOPT_URL, $url);
             $res = curl_exec($ch);
-            $redis->set($cachekey, $res, ['nx', 'ex' => $cachetime]);
+            $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($httpcode == 200 || $httpcode == 202){
+                $redis->set($cachekey, $res, ['nx', 'ex' => $cachetime]);
+            }
             curl_close($ch);
         }
     
         $this->setContentType('text/html');
-        $this->setStatus(200);            
+        $this->setStatus($httpcode);            
         $this->setContent($res);         
     }
 }
