@@ -21,29 +21,41 @@ class ywbcurl extends AbstractAction
 
     protected function _execute()  
     {
-        $url = $this->getActionPayload();
-        $cachetime = 60*60*24; //кешируем на сутки
-        $httpcode = 200;
+        $url = trim($this->getActionPayload());
 
+        $cachetime = 60*60*24; //кешируем на сутки
         $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
         $redis = $ktRedis->getOriginalClient();
+        $cachekey = 'ywbCurl-'.$url;
+        $content = $redis->get($cachekey);
 
-        $cachekey = 'ywbDomain-'.$url;
-        $res = $redis->get($cachekey);
-        if ($res===false){
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
-            curl_setopt($ch, CURLOPT_URL, $url);
-            $res = curl_exec($ch);
-            $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if ($httpcode == 200 || $httpcode == 202){
-                $redis->set($cachekey, $res, ['nx', 'ex' => $cachetime]);
+        if ($content===false){
+            $opts = [
+                "localDomain" => $this->getServerRequest()->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
+                "url" => $url, 
+                "user_agent" => $this->getRawClick()->getUserAgent(), 
+                "referrer" => $this->getPipelinePayload()->getActionOption("referrer")
+            ];
+            $result = \Traffic\Actions\CurlService::instance()->request($opts);
+
+            if (!empty($result["error"])) {
+                $content = "Oops! Something went wrong on the requesting page:".$result["error"];
+            } else {
+                if (!empty($result["body"])) {
+                    $body = $result["body"];
+                    $content = $this->processMacros($result["body"]);
+                    $content = \Traffic\Tools\Tools::utf8ize($content);
+                    $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
+                    $this->addHeader("X-YWBCurl: from WWW " . $url);
+                }
             }
-            curl_close($ch);
         }
-    
-        $this->setContentType('text/html');
-        $this->setStatus($httpcode);            
-        $this->setContent($res);         
+        else
+        {
+            $this->addHeader("X-YWBCurl: from Redis cache " . $url);
+        }
+
+        $this->setContentType("text/html");
+        $this->setContent($content);
     }
 }
