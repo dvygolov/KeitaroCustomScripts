@@ -4,15 +4,14 @@ namespace Redirects;
 use Traffic\Actions\AbstractAction;
 /*
 Кастомный экшн для Кейтаро для подгрузки сайта из внутренней CMS Crazy Profits Agency c кешированием результатов.
-ЕСЛИ ВЫ НЕ НОВЫЙ АДМИН НАШЕГО АГЕНТСТВА, ТО ЭТОТ ЭКШН ВАМ СОВЕРШЕННО НЕ НУЖЕН!
 Скопировать файл экшна в папку application\redirects затем перелогиниться в трекер
 Устанавливаете экшн в потоке, в поле пишите настройки в формате JSON, которые будут переданы в CMS.
 В качестве механизма для кеширования используется Redis
 ©2022 by Yellow Web
  */
-class ywbsystem extends AbstractAction
+class ywbcms extends AbstractAction
 {
-    protected $_name = 'ywbsystem';     // <-- Имя действия
+    protected $_name = 'ywbCMS';     // <-- Имя действия
     protected $_weight = 2;            // <-- Вес для сортировки в списке действий
 
     public function getType()
@@ -28,6 +27,34 @@ class ywbsystem extends AbstractAction
     protected function _execute()  
     {
         $json = json_decode($this->getActionPayload(),true);
+        switch (json_last_error()) {
+            case JSON_ERROR_NONE:
+                break;
+            case JSON_ERROR_DEPTH:
+                $this->setContent('JSON - Maximum stack depth exceeded');
+                return;
+            break;
+            case JSON_ERROR_STATE_MISMATCH:
+                $this->setContent('JSON - Underflow or the modes mismatch');
+                return;
+            break;
+            case JSON_ERROR_CTRL_CHAR:
+                $this->setContent('JSON - Unexpected control character found');
+                return;
+            break;
+            case JSON_ERROR_SYNTAX:
+                $this->setContent('JSON - Syntax error, malformed JSON');
+                return;
+            break;
+            case JSON_ERROR_UTF8:
+                $this->setContent('JSON - Malformed UTF-8 characters, possibly incorrectly encoded');
+                return;
+            break;
+            default:
+                $this->setContent('JSON - Unknown error');
+                return;
+            break;
+        }
         $json['nocache']=1;
         $qs = http_build_query($json);
         $url = "/local/common4/index.php?{$qs}";
@@ -56,7 +83,7 @@ class ywbsystem extends AbstractAction
             } else {
                 if (!empty($result["body"])) {
                     $content = $result["body"];
-                    $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
+                    //$redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
                     $this->addHeader("X-YWBCurl: from WWW " . $url);
                 }
             }
