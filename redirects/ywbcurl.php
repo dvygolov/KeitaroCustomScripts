@@ -3,7 +3,7 @@ namespace Redirects;
 
 use Traffic\Actions\AbstractAction;
 /*
-Кастомный экшн для Кейтаро для подгрузки любых сайтов через CURL c кешированием результатов.
+Кастомный экшн для Кейтаро для подгрузки вайтов через CURL c кешированием результатов.
 Скопировать файл экшна в папку application\redirects затем перелогиниться в трекер
 Устанавливаете экшн в потоке, в поле пишите сайт, который будем подгружать.
 В качестве механизма для кеширования используется Redis
@@ -42,9 +42,7 @@ class ywbcurl extends AbstractAction
                 $content = "Oops! Something went wrong on the requesting page:".$result["error"];
             } else {
                 if (!empty($result["body"])) {
-                    $body = $result["body"];
-                    $content = $this->processMacros($result["body"]);
-                    $content = \Traffic\Tools\Tools::utf8ize($content);
+                    $content = $result["body"];
                     $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
                     $this->addHeader("X-YWBCurl: from WWW " . $url);
                 }
@@ -55,6 +53,8 @@ class ywbcurl extends AbstractAction
             $this->addHeader("X-YWBCurl: from Redis cache " . $url);
         }
 
+        $content = $this->processMacros($content);
+        $content = \Traffic\Tools\Tools::utf8ize($content);
         $this->setContentType("text/html");
         $this->setContent($content);
     }
