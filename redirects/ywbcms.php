@@ -62,6 +62,7 @@ class ywbcms extends AbstractAction
         $json['nocache']=1; //prevent internal caching, we'll use Redis
         $json['subid']=$rawClick->getSubId();
         $json['campaignId']=$rawClick->getCampaignId();
+        $json['ip']=$rawClick->getIpString();
         $qs = http_build_query($json);
         $url = "/local/common4/index.php?{$qs}";
         $sreq=$this->getServerRequest();
