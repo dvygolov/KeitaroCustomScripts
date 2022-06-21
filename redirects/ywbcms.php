@@ -26,6 +26,7 @@ class ywbcms extends AbstractAction
 
     protected function _execute()  
     {
+        $rawClick = $this->getRawClick();
         $json = json_decode($this->getActionPayload(),true);
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
@@ -56,6 +57,8 @@ class ywbcms extends AbstractAction
             break;
         }
         $json['nocache']=1;
+        $json['subid']=$rawClick->getSubId();
+        $json['campaignId']=$rawClick->getCampaignId();
         $qs = http_build_query($json);
         $url = "/local/common4/index.php?{$qs}";
 
@@ -71,9 +74,9 @@ class ywbcms extends AbstractAction
 
         if ($content===false){
             $opts = [
-                "localDomain" => $this->getServerRequest()->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
+                "localDomain" => $sReq->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
                 "url" => $url, 
-                "user_agent" => $this->getRawClick()->getUserAgent(), 
+                "user_agent" => $rawClick->getUserAgent(), 
                 "referrer" => $this->getPipelinePayload()->getActionOption("referrer")
             ];
             $result = \Traffic\Actions\CurlService::instance()->request($opts);
