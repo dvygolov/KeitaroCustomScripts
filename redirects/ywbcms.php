@@ -76,7 +76,7 @@ class ywbcms extends AbstractAction
 
         if ($content===false){
             $opts = [
-                "localDomain" => $sReq->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
+                "localDomain" => $sreq->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
                 "url" => $url, 
                 "user_agent" => $rawClick->getUserAgent(), 
                 "referrer" => $this->getPipelinePayload()->getActionOption("referrer")
