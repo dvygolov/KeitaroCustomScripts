@@ -56,20 +56,21 @@ class ywbcms extends AbstractAction
                 return;
             break;
         }
-        $json['nocache']=1;
+        //include only important stuff into key
+        $cachekey = 'ywbCurl-'.http_build_query($json);
+
+        $json['nocache']=1; //prevent internal caching, we'll use Redis
         $json['subid']=$rawClick->getSubId();
         $json['campaignId']=$rawClick->getCampaignId();
         $qs = http_build_query($json);
         $url = "/local/common4/index.php?{$qs}";
-
         $sreq=$this->getServerRequest();
         $uri = parse_url($sreq->getUri());
-        $url=$uri["scheme"]."://".$uri["host"].$url.'&'.$uri["query"];
+        $url=$uri["scheme"]."://".$uri["host"].$url;
 
-        $cachetime = 60*60*24; //кешируем на сутки
+        $cachetime = 60*60*24; //24 hours caching
         $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
         $redis = $ktRedis->getOriginalClient();
-        $cachekey = 'ywbCurl-'.$url;
         $content = $redis->get($cachekey);
 
         if ($content===false){
@@ -86,7 +87,7 @@ class ywbcms extends AbstractAction
             } else {
                 if (!empty($result["body"])) {
                     $content = $result["body"];
-                    //$redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
+                    $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
                     $this->addHeader("X-YWBCurl: from WWW " . $url);
                 }
             }
