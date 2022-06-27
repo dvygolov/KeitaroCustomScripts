@@ -27,7 +27,8 @@ class ywbcms extends AbstractAction
     protected function _execute()  
     {
         $rawClick = $this->getRawClick();
-        $json = json_decode($this->getActionPayload(),true);
+        $payload = $this->getActionPayload();
+        $json = json_decode($payload,true);
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
                 break;
@@ -59,7 +60,7 @@ class ywbcms extends AbstractAction
         //include only important stuff into key
         $cachekey = 'ywbCurl-'.http_build_query($json);
 
-        $json['nocache']=1; //prevent internal caching, we'll use Redis
+        // $json['nocache']=1; //prevent internal caching, we'll use Redis
         $json['subid']=$rawClick->getSubId();
         $json['campaignId']=$rawClick->getCampaignId();
         $json['ip']=$rawClick->getIpString();
@@ -86,10 +87,13 @@ class ywbcms extends AbstractAction
             if (!empty($result["error"])) {
                 $content = "Oops! Something went wrong on the requesting page:".$result["error"];
             } else {
-                if (!empty($result["body"])) {
+                if ($result["status"]==200 && !empty($result["body"])) {
                     $content = $result["body"];
                     $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
                     $this->addHeader("X-YWBCurl: from WWW " . $url);
+                }
+                else{
+                    $content = "Oops! Something went wrong on the requesting page:".$result["body"]." Code:".$result["status"];
                 }
             }
         }
