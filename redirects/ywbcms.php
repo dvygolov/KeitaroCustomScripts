@@ -94,6 +94,7 @@ class ywbcms extends AbstractAction
                 }
                 else{
                     $content = "Oops! Something went wrong on the requesting page:".$result["body"]." Code:".$result["status"];
+                    $this->setStatus($result["status"]);
                 }
             }
         }
