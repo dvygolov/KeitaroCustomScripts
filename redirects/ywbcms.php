@@ -57,8 +57,14 @@ class ywbcms extends AbstractAction
                 return;
             break;
         }
+        $redisReplace = false;
+        if (array_key_exists('redisReplace',$json))
+        {
+            $redisReplace=true;
+            unset($json['redisReplace']);
+        }
         //include only important stuff into key
-        $cachekey = 'ywbCurl-'.http_build_query($json);
+        $cachekey = 'ywbCMS-'.http_build_query($json);
 
         // $json['nocache']=1; //prevent internal caching, we'll use Redis
         $json['subid']=$rawClick->getSubId();
@@ -75,7 +81,7 @@ class ywbcms extends AbstractAction
         $redis = $ktRedis->getOriginalClient();
         $content = $redis->get($cachekey);
 
-        if ($content===false){
+        if ($content===false||$redisReplace){
             $opts = [
                 "localDomain" => $sreq->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
                 "url" => $url, 
@@ -89,8 +95,10 @@ class ywbcms extends AbstractAction
             } else {
                 if ($result["status"]==200 && !empty($result["body"])) {
                     $content = $result["body"];
+                    if ($redisReplace) $redis->del($cachekey);
                     $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
-                    $this->addHeader("X-YWBCurl: from WWW " . $url);
+                    $this->addHeader("X-YWB-CMS: from WWW " . $url);
+                    $this->addHeader("X-YWB-RKey: set ".$cachekey);
                 }
                 else{
                     $content = "Oops! Something went wrong on the requesting page:".$result["body"]." Code:".$result["status"];
@@ -100,12 +108,14 @@ class ywbcms extends AbstractAction
         }
         else
         {
-            $this->addHeader("X-YWBCurl: from Redis cache " . $url);
+            $this->addHeader("X-YWB-CMS: from Redis " . $url);
+            $this->addHeader("X-YWB-RKey: get ".$cachekey);
         }
 
         $content = $this->processMacros($content);
         $content = \Traffic\Tools\Tools::utf8ize($content);
         $this->setContentType("text/html");
         $this->setContent($content);
+        //$redis->publish('ywb-subs-channel',json_encode($json));
     }
 }
