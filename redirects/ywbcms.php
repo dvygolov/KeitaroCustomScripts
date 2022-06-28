@@ -66,6 +66,8 @@ class ywbcms extends AbstractAction
         //include only important stuff into key
         $cachekey = 'ywbCMS-'.http_build_query($json);
 
+        if ($redisReplace) $json['nocache']=true; //if we want to replace - replace the whole thing without any caches involved
+
         // $json['nocache']=1; //prevent internal caching, we'll use Redis
         $json['subid']=$rawClick->getSubId();
         $json['campaignId']=$rawClick->getCampaignId();
