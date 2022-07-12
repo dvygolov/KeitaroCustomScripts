@@ -63,6 +63,8 @@ class ywbcms extends AbstractAction
             $redisReplace=true;
             unset($json['redisReplace']);
         }
+        if (array_key_exists('redisReplace',$_GET))
+            $redisReplace=true;
         //include only important stuff into key
         $cachekey = 'ywbCMS-'.http_build_query($json);
 
@@ -73,7 +75,7 @@ class ywbcms extends AbstractAction
         $json['campaignId']=$rawClick->getCampaignId();
         $json['ip']=$rawClick->getIpString();
         $qs = http_build_query($json);
-        $url = "/local/common4/index.php?{$qs}";
+        $url = "/local/common/index.php?{$qs}";
         $sreq=$this->getServerRequest();
         $uri = parse_url($sreq->getUri());
         $url=$uri["scheme"]."://".$uri["host"].$url;
