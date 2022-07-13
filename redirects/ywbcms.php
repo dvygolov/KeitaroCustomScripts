@@ -114,6 +114,7 @@ class ywbcms extends AbstractAction
         {
             $this->addHeader("X-YWB-CMS: from Redis " . $url);
             $this->addHeader("X-YWB-RKey: get ".$cachekey);
+            $content = preg_replace("/<base[^>]+>/",'<base href="/local/common/index.php">',$content); //need to remove cached base tag
         }
 
         $content = $this->processMacros($content);
