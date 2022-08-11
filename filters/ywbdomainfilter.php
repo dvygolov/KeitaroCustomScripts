@@ -24,14 +24,14 @@ class ywbdomainfilter extends AbstractFilter
 
     public function getTemplate()
     {
-        return '<input class="form-control" ng-model="filter.payload" />';
+        return 'Введите ваш домен (без http и www): <input class="form-control" ng-model="filter.payload.domain" />';
     }
 
 	public function isPass(StreamFilter $filter, RawClick $rawClick)
     {
 		$curdomain = $_SERVER['SERVER_NAME'];
 		$filterdomains = $filter->getPayload();
-		$domains = explode(',',$filterdomains);
+		$domains = explode(',',$filterdomains["domain"]);
 		$match = in_array($curdomain,$domains);
 			
 		return ($filter->getMode() == StreamFilter::ACCEPT && $match)
