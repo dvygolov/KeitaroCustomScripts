@@ -11,12 +11,12 @@ use Traffic\Actions\AbstractAction;
  */
 class ywbcms extends AbstractAction
 {
-    protected $_name = 'ywbCMS';     // <-- Имя действия
-    protected $_weight = 2;            // <-- Вес для сортировки в списке действий
+    protected $_name = 'ywbCMS'; 
+    protected $_weight = 2;     
 
     public function getType()
     {
-        return self::TYPE_OTHER;              // <-- Указывает на тип
+        return self::TYPE_OTHER;
     }
 
     public function getField()
@@ -26,7 +26,7 @@ class ywbcms extends AbstractAction
 
     protected function _execute()  
     {
-        $rawClick = $this->getRawClick();
+        //Check payload correctness
         $payload = $this->getActionPayload();
         $json = json_decode($payload,true);
         switch (json_last_error()) {
@@ -57,20 +57,19 @@ class ywbcms extends AbstractAction
                 return;
             break;
         }
+
         $redisReplace = false;
-        if (array_key_exists('redisReplace',$json))
+        if (array_key_exists('redisReplace',$json) || array_key_exists('redisReplace',$_GET))
         {
             $redisReplace=true;
             unset($json['redisReplace']);
         }
-        if (array_key_exists('redisReplace',$_GET))
-            $redisReplace=true;
         //include only important stuff into key
         $cachekey = 'ywbCMS-'.http_build_query($json);
 
         if ($redisReplace) $json['nocache']=true; //if we want to replace - replace the whole thing without any caches involved
 
-        // $json['nocache']=1; //prevent internal caching, we'll use Redis
+        $rawClick = $this->getRawClick();
         $json['subid']=$rawClick->getSubId();
         $json['campaignId']=$rawClick->getCampaignId();
         $json['ip']=$rawClick->getIpString();
@@ -95,7 +94,7 @@ class ywbcms extends AbstractAction
             $result = \Traffic\Actions\CurlService::instance()->request($opts);
 
             if (!empty($result["error"])) {
-                $content = "Oops! Something went wrong on the requesting page:".$result["error"];
+                $content = "Oops! Something went wrong while requesting page:".$result["error"];
             } else {
                 if ($result["status"]==200 && !empty($result["body"])) {
                     $content = $result["body"];
@@ -105,7 +104,7 @@ class ywbcms extends AbstractAction
                     $this->addHeader("X-YWB-RKey: set ".$cachekey);
                 }
                 else{
-                    $content = "Oops! Something went wrong on the requesting page:".$result["body"]." Code:".$result["status"];
+                    $content = "Oops! Something went wrong while requesting page:".$result["body"]." Code:".$result["status"];
                     $this->setStatus($result["status"]);
                 }
             }
