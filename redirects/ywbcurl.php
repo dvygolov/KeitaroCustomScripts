@@ -26,10 +26,13 @@ class ywbcurl extends AbstractAction
         $cachetime = 60*60*24; //кешируем на сутки
         $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
         $redis = $ktRedis->getOriginalClient();
+        $redisReplace=false;
+        if (array_key_exists('redisReplace',$_GET))
+            $redisReplace=true;
         $cachekey = 'ywbCurl-'.$url;
         $content = $redis->get($cachekey);
 
-        if ($content===false){
+        if ($content===false || $redisReplace){
             $opts = [
                 "localDomain" => $this->getServerRequest()->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
                 "url" => $url, 
