@@ -1,7 +1,10 @@
 <?php
 namespace Redirects;
 
+use Redis;
+use Traffic\Actions\CurlService;
 use Traffic\Actions\AbstractAction;
+use Traffic\Request\ServerRequest;
 /*
 Кастомный экшн для Кейтаро для подгрузки сайта из внутренней CMS Crazy Profits Agency c кешированием результатов.
 Скопировать файл экшна в папку application\redirects затем перелогиниться в трекер
@@ -11,12 +14,12 @@ use Traffic\Actions\AbstractAction;
  */
 class ywbcms extends AbstractAction
 {
-    protected $_name = 'ywbCMS'; 
-    protected $_weight = 2;     
+    protected $_name = 'ywbCMS';     // <-- Имя действия
+    protected $_weight = 2;            // <-- Вес для сортировки в списке действий
 
     public function getType()
     {
-        return self::TYPE_OTHER;
+        return self::TYPE_OTHER;              // <-- Указывает на тип
     }
 
     public function getField()
@@ -26,7 +29,6 @@ class ywbcms extends AbstractAction
 
     protected function _execute()  
     {
-        //Check payload correctness
         $payload = $this->getActionPayload();
         $json = json_decode($payload,true);
         switch (json_last_error()) {
@@ -80,18 +82,18 @@ class ywbcms extends AbstractAction
         $url=$uri["scheme"]."://".$uri["host"].$url;
 
         $cachetime = 60*60*24; //24 hours caching
-        $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
-        $redis = $ktRedis->getOriginalClient();
+	    $redis = new Redis();
+        $redis->connect('127.0.0.1', 6379);
         $content = $redis->get($cachekey);
 
         if ($content===false||$redisReplace){
             $opts = [
-                "localDomain" => $sreq->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
+                "localDomain" => $sreq->getHeaderLine('Host'), 
                 "url" => $url, 
                 "user_agent" => $rawClick->getUserAgent(), 
                 "referrer" => $this->getPipelinePayload()->getActionOption("referrer")
             ];
-            $result = \Traffic\Actions\CurlService::instance()->request($opts);
+            $result = CurlService::instance()->request($opts);
 
             if (!empty($result["error"])) {
                 $content = "Oops! Something went wrong while requesting page:".$result["error"];
@@ -117,7 +119,7 @@ class ywbcms extends AbstractAction
         }
 
         $content = $this->processMacros($content);
-        $content = \Traffic\Tools\Tools::utf8ize($content);
+        //$content = \Traffic\Tools\Tools::utf8ize($content);
         $this->setContentType("text/html");
         $this->setContent($content);
         //$redis->publish('ywb-subs-channel',json_encode($json));

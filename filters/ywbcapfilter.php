@@ -1,6 +1,7 @@
 <?php
 namespace Filters;
 
+use Redis;
 use Core\Filter\AbstractFilter;
 use Core\Locale\LocaleService;
 use Traffic\Model\StreamFilter;
@@ -41,8 +42,8 @@ class ywbcapfilter extends AbstractFilter
 
         $cachetime = 300; // 5 минут
         
-        $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
-        $redis = $ktRedis->getOriginalClient();
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6379);
 
         $ch = curl_init();
         $streamId=$filter->getStreamId();
@@ -108,6 +109,7 @@ class ywbcapfilter extends AbstractFilter
 		{
 			$totalLeads+= $row['conversions'];
 		}
+		// file_put_contents("/var/www/keitaro/application/filters/capFilterCache/totalLeads.txt", $totalLeads); //отладка
 		
         //взяли кап из настроек фильтра
 		$cap = $filter->getPayload()["cap"];

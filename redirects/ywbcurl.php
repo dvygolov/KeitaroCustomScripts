@@ -1,7 +1,11 @@
 <?php
+
 namespace Redirects;
 
+use Redis;
+use Traffic\Actions\CurlService;
 use Traffic\Actions\AbstractAction;
+use Traffic\Request\ServerRequest;
 /*
 Кастомный экшн для Кейтаро для подгрузки вайтов через CURL c кешированием результатов.
 Скопировать файл экшна в папку application\redirects затем перелогиниться в трекер
@@ -9,6 +13,7 @@ use Traffic\Actions\AbstractAction;
 В качестве механизма для кеширования используется Redis
 ©2022 by Yellow Web
  */
+
 class ywbcurl extends AbstractAction
 {
     protected $_name = 'ywbCurl';     // <-- Имя действия
@@ -19,30 +24,30 @@ class ywbcurl extends AbstractAction
         return self::TYPE_OTHER;              // <-- Указывает на тип
     }
 
-    protected function _execute()  
+    protected function _execute()
     {
         $url = trim($this->getActionPayload());
 
-        $cachetime = 60*60*24; //кешируем на сутки
-        $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
-        $redis = $ktRedis->getOriginalClient();
-        $redisReplace=false;
-        if (array_key_exists('redisReplace',$_GET))
-            $redisReplace=true;
-        $cachekey = 'ywbCurl-'.$url;
+        $cachetime = 60 * 60 * 24; //кешируем на сутки
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6379);
+        $redisReplace = false;
+        if (array_key_exists('redisReplace', $_GET))
+            $redisReplace = true;
+        $cachekey = 'ywbCurl-' . $url;
         $content = $redis->get($cachekey);
 
-        if ($content===false || $redisReplace){
+        if ($content === false || $redisReplace) {
             $opts = [
-                "localDomain" => $this->getServerRequest()->getHeaderLine(\Traffic\Request\ServerRequest::HEADER_HOST), 
-                "url" => $url, 
-                "user_agent" => $this->getRawClick()->getUserAgent(), 
+                "localDomain" => $this->getServerRequest()->getHeaderLine('Host'),
+                "url" => $url,
+                "user_agent" => $this->getRawClick()->getUserAgent(),
                 "referrer" => $this->getPipelinePayload()->getActionOption("referrer")
             ];
-            $result = \Traffic\Actions\CurlService::instance()->request($opts);
+            $result = CurlService::instance()->request($opts);
 
             if (!empty($result["error"])) {
-                $content = "Oops! Something went wrong on the requesting page:".$result["error"];
+                $content = "Oops! Something went wrong on the requesting page:" . $result["error"];
             } else {
                 if (!empty($result["body"])) {
                     $content = $result["body"];
@@ -50,14 +55,12 @@ class ywbcurl extends AbstractAction
                     $this->addHeader("X-YWBCurl: from WWW " . $url);
                 }
             }
-        }
-        else
-        {
+        } else {
             $this->addHeader("X-YWBCurl: from Redis cache " . $url);
         }
 
         $content = $this->processMacros($content);
-        $content = \Traffic\Tools\Tools::utf8ize($content);
+        //$content = \Traffic\Tools\Tools::utf8ize($content);
         $this->setContentType("text/html");
         $this->setContent($content);
     }

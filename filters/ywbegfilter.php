@@ -1,6 +1,7 @@
 <?php
 namespace Filters;
 
+use Redis;
 use Core\Filter\AbstractFilter;
 use Core\Locale\LocaleService;
 use Traffic\Model\StreamFilter;
@@ -16,7 +17,7 @@ lp_ctr, epc_confirmed, cr, crs.
 Последним выбираете процент рандома, для начала сойдёт 10%, далее можете экспериментировать.
 В качестве кеша для хранения полученных из БД Кейтаро используется Redis. Время хранения записей кеша = 5 минут.
 ©2022 by Yellow Web
- */
+*/
 class ywbegfilter extends AbstractFilter
 {
     public function getModes()
@@ -64,10 +65,10 @@ class ywbegfilter extends AbstractFilter
 
         $logDir = '/var/www/keitaro/application/filters/ywbegfilter';
         $campaignId = $rawClick->getCampaignId();
-        $adminCampaignId=-1;
+        $adminCampaignId=-1; //Id of the campaign that we'll use to debug the filter
 
-        $ktRedis = \Traffic\Redis\Service\RedisStorageService::instance();
-        $redis = $ktRedis->getOriginalClient();
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6379);
         $cachetime = 300; // 5 минут
 		//взяли настройки из настроек фильтра
 		$settings= $filter->getPayload();
@@ -81,27 +82,28 @@ class ywbegfilter extends AbstractFilter
 			$statistics = $settings['statistics'];
 
 		$ch = curl_init();
-		$apiAddress = $apiAddress.'/admin_api/v1';
+		$apiAddress = "$apiAddress/admin_api/v1";
 		$streamId = $filter->getStreamId();
 		
         $cachekey = 'ywbEgStream-'.$streamId;
         $res = $redis->get($cachekey);
+        $fromRedis = true;
 		if ($res===false) {
+            $fromRedis = false;
             //запрашиваем все данные по потоку, чтобы вынуть из него идентификаторы лендингов
-            $fullAddress=$apiAddress.'/streams/'.$streamId;
+            $fullAddress = "$apiAddress/streams/$streamId";
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
             curl_setopt($ch, CURLOPT_URL, $fullAddress);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Api-Key: '.$apiKey));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array("Api-Key: $apiKey"));
             $res=curl_exec($ch);
             $redis->set($cachekey, $res, ['nx', 'ex'=>$cachetime]);
-            if ($campaignId===$adminCampaignId)
-                file_put_contents($logDir."/".$cachekey."-db.txt", $res); //отладка
-        }
-        else{
-            if ($campaignId===$adminCampaignId)
-                file_put_contents($logDir."/".$cachekey."-redis.txt", $res); //отладка
         }
         $streamParams=json_decode($res,true);
+
+        //logging
+        $fromWhere = $fromRedis?"redis":"db";
+        if ($campaignId === $adminCampaignId)
+            file_put_contents("$logDir/$cachekey-$fromWhere.txt", json_encode($streamParams,JSON_PRETTY_PRINT));
 
 		//вынимаем идентификаторы лендов
 		$landingIds=[];
@@ -120,14 +122,17 @@ class ywbegfilter extends AbstractFilter
 
 		$selectedLandId=-1;
 		$random=rand(1,100);
+        $selectReason = "random";
 		if ($random<=$explorationPercent){ //в $explorationPercent случаев выбираем рандомную проклу
-			$random=rand(1,count($landingIds))-1;
-			$selectedLandId=$landingIds[$random];
+			$selectedLandId=$landingIds[array_rand[$landingIds]];
 		}
         else{ 
+            $selectReason = "algorythm";
             $cachekey = 'ywbEgFilterlandings-'.$statistics.'-'.implode(",",$landingIds);
             $res = $redis->get($cachekey);
+            $fromRedis = true;
             if ($res===false) {
+                $fromRedis = false;
                 //получаем страну, чтобы потом построить отчёт только по нужной стране
                 $country=$rawClick->getCountry();
                 //в остальных случаях выбираем лучшую по выбранному показателю
@@ -140,7 +145,7 @@ class ywbegfilter extends AbstractFilter
                     'filters' => [
                         ['name' => 'landing_id', 'operator' => 'IN_LIST', 'expression' => $landingIds],
                     ],
-                    'grouping' => ['landing'],
+                    'grouping' => ['landing_id'],
                     'range' => [
                         'timezone' => $tz,
                         'from' => $from,
@@ -164,7 +169,7 @@ class ywbegfilter extends AbstractFilter
                 }
 
                 if ($campaignId===$adminCampaignId)
-                    file_put_contents($logDir."/".$cachekey."-query.txt", json_encode($params)); //отладка
+                    file_put_contents("$logDir/$cachekey-query.txt", json_encode($params,JSON_PRETTY_PRINT)); //отладка
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
                 curl_setopt($ch, CURLOPT_URL, $apiAddress.'/report/build');
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Api-Key: '.$apiKey));
@@ -172,14 +177,13 @@ class ywbegfilter extends AbstractFilter
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));		
                 $res=curl_exec($ch);
                 $redis->set($cachekey, $res, ['nx', 'ex'=>$cachetime]);
-                if ($campaignId===$adminCampaignId)
-                    file_put_contents($logDir."/".$cachekey."-db.txt", $res); //отладка
-            }
-            else{
-                if ($campaignId===$adminCampaignId)
-                    file_put_contents($logDir."/".$cachekey."-redis.txt", $res); //отладка
             }
             $report=json_decode($res,true);
+            
+            //logging
+            $fromWhere = $fromRedis?"redis":"db";
+            if ($campaignId===$adminCampaignId)
+                file_put_contents("$logDir/$cachekey-$fromWhere.txt", json_encode($report,JSON_PRETTY_PRINT)); //отладка
 			
 			//выбираем лучшую проклу по показателям
 			$bestMetric=0;
@@ -195,8 +199,8 @@ class ywbegfilter extends AbstractFilter
 
 			if ($bestLandId===0) {
 				//ситуация, когда у нас все показатели равны 0, берём рандомную
-				$random=rand(1,count($landingIds))-1;
-				$bestLandId=$landingIds[$random];
+			    $bestLandId=$landingIds[array_rand[$landingIds]];
+                $selectReason = "allequalrand";
 			}
 			$selectedLandId=$bestLandId;
 		}
@@ -205,7 +209,7 @@ class ywbegfilter extends AbstractFilter
 		$landObjects=[];
 		foreach($landingIds as $l)
 		{
-			$share=($l==$selectedLandId?100:0);
+			$share = $l==$selectedLandId?100:0;
 			
 			$landObj = (object) [
 				'landing_id' => $l,
@@ -215,11 +219,18 @@ class ywbegfilter extends AbstractFilter
 			array_push($landObjects,$landObj);
 		}
 		
+        //logging
+        if ($campaignId===$adminCampaignId)
+        {
+            $landStr = implode(",",$landingIds);
+            file_put_contents("$logDir/$landStr-$selectReason-$selectedLandId-result.txt", json_encode($landObjects,JSON_PRETTY_PRINT)); //отладка
+        }
+
 		if (count($landObjects)>0){
 			$params = (object) ['landings' => $landObjects];
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
-			curl_setopt($ch, CURLOPT_URL, $apiAddress.'/streams/'.$streamId);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Api-Key: '.$apiKey));
+			curl_setopt($ch, CURLOPT_URL, "$apiAddress/streams/$streamId");
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array("Api-Key: $apiKey"));
 			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
 			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));		
 			$res=curl_exec($ch);
