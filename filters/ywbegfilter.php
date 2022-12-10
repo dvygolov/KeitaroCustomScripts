@@ -124,7 +124,7 @@ class ywbegfilter extends AbstractFilter
 		$random=rand(1,100);
         $selectReason = "random";
 		if ($random<=$explorationPercent){ //в $explorationPercent случаев выбираем рандомную проклу
-			$selectedLandId=$landingIds[array_rand[$landingIds]];
+			$selectedLandId=$landingIds[array_rand($landingIds)];
 		}
         else{ 
             $selectReason = "algorythm";
@@ -199,7 +199,7 @@ class ywbegfilter extends AbstractFilter
 
 			if ($bestLandId===0) {
 				//ситуация, когда у нас все показатели равны 0, берём рандомную
-			    $bestLandId=$landingIds[array_rand[$landingIds]];
+			    $bestLandId=$landingIds[array_rand($landingIds)];
                 $selectReason = "allequalrand";
 			}
 			$selectedLandId=$bestLandId;
