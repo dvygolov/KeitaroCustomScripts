@@ -74,6 +74,7 @@ class ywbcms extends AbstractAction
         $rawClick = $this->getRawClick();
         $json['subid']=$rawClick->getSubId();
         $json['campaignId']=$rawClick->getCampaignId();
+        $json['landingId']=$rawClick->getLandingId();
         $json['ip']=$rawClick->getIpString();
         $qs = http_build_query($json);
         $url = "/local/common/index.php?{$qs}";
