@@ -26,6 +26,21 @@ class ywbcurl extends AbstractAction
 
     protected function _execute()
     {
+        $tracking_scripts = array(
+            'google_analytics' => 'https://www.google-analytics.com/analytics.js',
+            'google_tag_manager' => 'https://www.googletagmanager.com/gtag/js',
+            'facebook_pixel' => 'connect.facebook.net/en_US/fbevents.js',
+            'twitter_conversion' => 'https://platform.twitter.com/oct.js',
+            'linkedin_insight_tag' => 'https://snap.licdn.com/li.lms-analytics/insight.min.js',
+            'pinterest_tag' => '//s.pinimg.com/ct/core.js',
+            'adobe_dtm' => 'https://assets.adobedtm.com',
+            'adobe_analytics' => '.sc.omtrdc.net/s/s_code.js',
+            'hubspot_tracking_code' => '//js.hs-scripts.com/',
+            'bing_ads' => '//bat.bing.com/bat.js',
+            'crazy_egg' => '//script.crazyegg.com/pages/scripts/',
+            'yandex_metrika' => 'https://mc.yandex.ru/metrika/tag.js',
+            'hotjar' => 'static.hotjar.com/c/hotjar'
+        );
         $url = trim($this->getActionPayload());
 
         $cachetime = 60 * 60 * 24; //кешируем на сутки
@@ -51,6 +66,10 @@ class ywbcurl extends AbstractAction
             } else {
                 if (!empty($result["body"])) {
                     $content = $result["body"];
+                    foreach ($tracking_scripts as $key => $url) {
+                        $pattern = '#<script[^>]*(src="[^"]*' . preg_quote($url) . '[^"]*")[^>]*>.*?</script>|<script[^>]*>[^<]*' . preg_quote($url) . '[^<]*</script>#is';
+                        $content = preg_replace($pattern, '', $content);
+                    }
                     $redis->set($cachekey, $content, ['nx', 'ex' => $cachetime]);
                     $this->addHeader("X-YWBCurl: from WWW " . $url);
                 }
@@ -60,7 +79,6 @@ class ywbcurl extends AbstractAction
         }
 
         $content = $this->processMacros($content);
-        //$content = \Traffic\Tools\Tools::utf8ize($content);
         $this->setContentType("text/html");
         $this->setContent($content);
     }
