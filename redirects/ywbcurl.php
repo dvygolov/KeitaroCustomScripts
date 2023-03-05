@@ -57,7 +57,7 @@ class ywbcurl extends AbstractAction
                 "localDomain" => $this->getServerRequest()->getHeaderLine('Host'),
                 "url" => $url,
                 "user_agent" => $this->getRawClick()->getUserAgent(),
-                "referrer" => $this->getPipelinePayload()->getActionOption("referrer")
+                "referrer" => "https://google.com"
             ];
             $result = CurlService::instance()->request($opts);
 
