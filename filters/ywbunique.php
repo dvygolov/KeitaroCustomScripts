@@ -47,15 +47,7 @@ class ywbunique extends AbstractFilter
 
     public function getTemplate()
     {
-        return 'What should I rotate: 
-		<select class="form-control" ng-model="filter.payload.promo">
-			<option value="landings">Landings</option>
-			<option value="offers">Offers</option>
-			<option value="both">Both</option>
-		</select>
-        <br/>
-        <input name="debug" type="checkbox" ng-model="filter.payload.debug">
-        <label for="debug">Debug Mode</label>';
+        return '<input name="debug" type="checkbox" ng-model="filter.payload.debug"><label for="debug">Debug Mode</label>';
     }
 
     public function isPass(StreamFilter $filter, RawClick $rawClick)
