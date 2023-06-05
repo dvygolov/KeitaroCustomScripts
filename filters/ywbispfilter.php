@@ -46,7 +46,7 @@ class ywbispfilter extends AbstractFilter
         try {
             $record = $reader->asn($ip);
             $cur_isp = $record->autonomousSystemOrganization;
-        }catch (GeoIp2\Exception\AddressNotFoundException $exception){
+        }catch (\Exception $exception){
             $cur_isp = 'Unknown';
         }
 
