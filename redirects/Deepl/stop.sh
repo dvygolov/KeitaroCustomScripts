@@ -1,0 +1,1 @@
+ps aux  |  grep -i ywbdeeplbg.php  |  awk '{print $2}'  |  xargs sudo kill -9

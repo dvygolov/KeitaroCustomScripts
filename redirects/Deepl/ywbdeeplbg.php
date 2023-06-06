@@ -16,7 +16,7 @@ use DeepL\Translator;
 
 class DeeplBackgroundTranslator
 {
-  protected $deeplApiKey  = "";  //ENTER YOUR DEEPL API KEY HERE
+  protected $deeplApiKey  = "93afb11f-555f-2675-34c9-2e9c7c1906c0";  //ENTER YOUR DEEPL API KEY HERE
 
   function __construct(){
     echo "Deepl Background Translator v2.0 by Yellow Web\n";
@@ -49,12 +49,19 @@ class DeeplBackgroundTranslator
       echo "Translation ALREADY in progress, wait!", PHP_EOL;
       return;
     }
-    $this->createLock($outputDir);
-    $translator = new Translator($this->deeplApiKey);
-    echo "Starting translation for ".$inputPath, PHP_EOL;
-    $status = $translator->translateDocument($inputPath, $outputPath, null, $lang);
-    echo "Translation status: ".$status->status." Errors: ".$status->errorMessage, PHP_EOL;
-    $this->clearLock($outputDir);
+    try {
+        $this->createLock($outputDir);
+        $translator = new Translator($this->deeplApiKey);
+        echo "Starting translation for ".$inputPath, PHP_EOL;
+        $status = $translator->translateDocument($inputPath, $outputPath, null, $lang);
+        echo "Translation status: ".$status->status." Errors: ".$status->errorMessage, PHP_EOL;
+    }
+    catch (\Exception $e){
+        echo "Error translating text: ".$e->getMessage(), PHP_EOL;
+    }
+    finally {
+        $this->clearLock($outputDir);
+    }
   }
 
   private function checkLock($outputDir){
