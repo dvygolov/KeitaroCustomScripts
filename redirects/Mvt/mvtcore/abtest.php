@@ -3,7 +3,6 @@ require_once '/var/www/keitaro/application/redirects/mvtcore/html5dom.php';
 
 class ABTest
 {
-    public string $_testName;
     public array $_variations;
     public array $_subs;
 
@@ -21,7 +20,6 @@ class ABTest
         $dom = new HTML5DOMDocument();
         $dom->loadHTML($html, 67108864);
 
-        $this->_testName = $settings['name'];
         $tests = $settings['tests'];
         $testsCount = count($tests);
         for ($i = 0; $i < $testsCount; $i++) {
@@ -52,7 +50,7 @@ class ABTest
 
         if ($printDebug) {
             $body = $dom->querySelector('body');
-            $testNameNode = new DOMText($this->_testName." ".implode('-',$this->_variations));
+            $testNameNode = new DOMText(implode('-',$this->_variations));
             $body->insertBefore($testNameNode, $body->firstChild);
         }
         $html = $dom->saveHTML();
@@ -61,3 +59,5 @@ class ABTest
         return $html;
     }
 }
+
+?>
