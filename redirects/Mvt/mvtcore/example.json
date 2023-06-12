@@ -1,0 +1,37 @@
+{
+  "inputDir": "/landers/sustavi-new",
+  "debug": true,
+  "tests": [
+    {
+      "selector": "#main-header",
+      "sub": 17,
+      "type": "attribute",
+      "attribute": "style",
+      "variations": [
+        {
+          "name": "Hidden header",
+          "value": "display:none;"
+        }
+      ]
+    },
+    {
+      "sub": 18,
+      "selector": "#sub-header",
+      "type": "text",
+      "variations": [
+        {
+          "name": "Secret",
+          "value": "Il segreto di una donna italiana di 72 anni per superare i dolori articolari e correre una maratona di 42 km"
+        },
+        {
+          "name": "Journey",
+          "value": "L'incredibile viaggio di una donna di 72 anni che ha superato i dolori articolari e ha corso una maratona"
+        },
+        {
+          "name": "Question",
+          "value": "Dolori articolari? Nessun problema! Come una donna italiana di 72 anni ha corso una maratona di 42 chilometri"
+        }
+      ]
+    }
+  ]
+}
