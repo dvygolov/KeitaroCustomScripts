@@ -1,5 +1,5 @@
 <?php
-require_once '/var/www/keitaro/application/redirects/mvpcore/html5dom.php';
+require_once '/var/www/keitaro/application/redirects/mvtcore/html5dom.php';
 
 class ABTest
 {
@@ -61,5 +61,3 @@ class ABTest
         return $html;
     }
 }
-
-?>
