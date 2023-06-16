@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Loading Page</title>
+  <meta http-equiv="refresh" content="5" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* Center the loading message */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Increase the font size of the loading message */
+    .loading-animation {
+      font-size: 8vw;
+      /* Adjust the font size as needed */
+    }
+
+    /* Add animation to the dots */
+    .loading-animation::after {
+      content: "";
+      font-size: 4vw;
+      /* Adjust the dot size as needed */
+      animation: loading 5s infinite;
+    }
+
+    /* Keyframes for the loading animation */
+    @keyframes loading {
+      0% {
+        content: "";
+      }
+
+      20% {
+        content: ".";
+      }
+
+      40% {
+        content: "..";
+      }
+
+      60% {
+        content: "...";
+      }
+
+      80% {
+        content: "....";
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="loading-animation">Loading, please wait</div>
+</body>
+
+</html>

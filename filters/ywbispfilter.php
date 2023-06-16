@@ -46,7 +46,7 @@ class ywbispfilter extends AbstractFilter
         try {
             $record = $reader->asn($ip);
             $cur_isp = $record->autonomousSystemOrganization;
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             $cur_isp = 'Unknown';
         }
 

@@ -120,9 +120,19 @@ class ywbcms extends AbstractAction
         }
 
         $content = $this->processMacros($content);
-        //$content = \Traffic\Tools\Tools::utf8ize($content);
         $this->setContentType("text/html");
         $this->setContent($content);
-        //$redis->publish('ywb-subs-channel',json_encode($json));
+        //TODO: Add these parameters to the click
+        // $extraParams=[
+        //   'scripts'=>'extra_param_10',
+        //   'person'=>'extra_param_8',
+        //   't'=>'extra_param_7',
+        //   'gender'=>'extra_param_6',
+        //   'vertical'=>'extra_param_5',
+        //   'form'=>'extra_param_4',
+        //   'product'=>'extra_param_3',
+        //   'text'=>'extra_param_2',
+        //   'lang'=>'extra_param_1'
+        // ];
     }
 }
