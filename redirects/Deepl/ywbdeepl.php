@@ -6,7 +6,7 @@ use \Redis;
 class ywbdeepl extends AbstractAction
 {
     protected $_name = 'ywbDeepl';
-    protected $_weight = 100;
+    protected $_weight = 4;
 
     private $supportedLangs = [
         'BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'ID', 'IT', 'JA',
@@ -40,20 +40,14 @@ class ywbdeepl extends AbstractAction
 
         if (!file_exists($outputPath)) {
             $this->startTranslation($lang, $inputPath, $outputPath);
-            $this->setContent('
-                <html>
-                <head>
-                <meta http-equiv="refresh" content="5">
-                </head>
-                LOADING, PLEASE WAIT!
-                </html>
-            ');
+            $this->setContent(file_get_contents("/var/www/keitaro/application/redirects/loading.html"));
             return;
         }
 
         $content = file_get_contents($outputPath);
         $content = preg_replace("/<head>/",'<head><base href="'.$this->getWebsitePath(false).'/">',$content); //need to add base tag
         $content = $this->processMacros($content);
+        $content = $this->adaptAnchors($content);
         $this->setContent($content);
     }
 
@@ -123,5 +117,16 @@ class ywbdeepl extends AbstractAction
 	    $redis = new Redis();
         $redis->connect('127.0.0.1', 6379);
         $redis->publish('ywb-deepl-channel', json_encode($params));
+    }
+    private function adaptAnchors($content){
+        $callback = function ($m)
+        {
+            if (strpos($m[1], "//") === 0 || strpos($m[1], "http://") === 0 || strpos($m[1], "https://") === 0) {
+                return $m[0];
+            }
+            return " href=\"#" . $m[2] . "\" onclick=\"document.location.hash='" . $m[2] . "';return false;\"";
+        };
+        $content = preg_replace_callback("/\\shref\\s?=\\s?[\"']([^\"^']*?)#([^\"^']*?)[\"']/", $callback, $content);
+        return $content;
     }
 }

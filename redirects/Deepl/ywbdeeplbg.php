@@ -1,5 +1,6 @@
 <?php
 
+require_once('ConnectionException.php');
 require_once('DeepLException.php');
 require_once('DocumentTranslationException.php');
 require_once('DocumentHandle.php');
