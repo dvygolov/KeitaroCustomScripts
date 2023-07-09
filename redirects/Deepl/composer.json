@@ -1,0 +1,8 @@
+{
+    "require": {
+        "markrogoyski/simplelog-php": "0.*",
+        "deeplcom/deepl-php": "^1.5",
+        "symfony/http-client": "^5.4",
+        "nyholm/psr7": "^1.8"
+    }
+}
