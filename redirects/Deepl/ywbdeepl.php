@@ -87,12 +87,11 @@ class ywbdeepl extends AbstractAction
     private function getInputFilePath(){
         $path = $this->getWebsitePath();
         $indexFiles = ['index.html', 'index.htm'];
-        $filePath = null;
         foreach ($indexFiles as $indexFile) {
             $filePath = $path . '/' . $indexFile;
-            if (file_exists($filePath)) break; 
+            if (file_exists($filePath)) return $filePath; 
         }
-        return $filePath;
+        return null;
     }
 
     private function getOutputFilePath($lang){
