@@ -21,7 +21,7 @@ class sha256 extends AbstractClickMacro
     if ($subNumber=="country")
       return hash("sha256", strtolower($click->getCountry()));
     if ($subNumber=="city")
-      return hash("sha256", $click->getCity());
+      return hash("sha256", strtolower($click->getCity()));
     return hash("sha256", $click->getSubIdN($subNumber));
   }
 }
