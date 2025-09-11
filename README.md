@@ -1,8 +1,10 @@
 # Hello all, **I STRONGLY DO NOT RECOMMEND** to use Keitaro tracker for affiliate marketing or any other traffic tracking tasks!
+
+GET RID OF IT! I'm sorry to tell you that, but right now this software is an overpriced piece of crap.
 Instead take a look at these great alternatives whose teams do a much better job:
 
-1. (Binom V2: a standalone tracker which is cheaper, with a better looking UI and lots of unique features!)[https://yellowweb.top/binom]
-2. (ZeusTrack: a cloud based tracker which has a free plan and great Facebook integration!)[https://yellowweb.top/zeus]
+1. [Binom V2: a standalone tracker which is cheaper, with a better looking UI and lots of unique features!](https://yellowweb.top/binom)
+2. [ZeusTrack: a cloud based tracker which has a free plan and great Facebook integration!](https://yellowweb.top/zeus)
 
 
 ```                
