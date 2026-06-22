@@ -7,7 +7,9 @@ Instead take a look at these great alternatives whose teams do a much better job
 2. [ZeusTrack: a cloud based tracker which has a free plan and great Facebook integration!](https://yellowweb.top/zeus)
 
 
-```                
+`$([Environment]::NewLine)
+[Support this project](https://yellowweb.top/donate)
+                
     _            __     __  _ _             __          __  _     
    | |           \ \   / / | | |            \ \        / / | |    
    | |__  _   _   \ \_/ /__| | | _____      _\ \  /\  / /__| |__  
@@ -17,4 +19,6 @@ Instead take a look at these great alternatives whose teams do a much better job
            __/ |                                                  
           |___/             https://yellowweb.top                 
 
-```                
+`$([Environment]::NewLine)
+[Support this project](https://yellowweb.top/donate)
+                
